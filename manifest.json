@@ -36,7 +36,7 @@
   "Description": "A Plugin to control YTMD from your StreamDeck Plus",
   "Name": "YTMD Encoder Remote",
   "URL": "https://github.com/levindecaro/streamdeck-ytmd",
-  "Version": "0.1",
+  "Version": "1.0.0",
   "OS": [
     {
         "Platform": "mac",
