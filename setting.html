@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name=viewport
+          content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover">
+    <meta name=apple-mobile-web-app-capable content=yes>
+    <meta name=apple-mobile-web-app-status-bar-style content=black>
+    <title>streamdeck-yeelight</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/barraider/streamdeck-easypi@latest/src/sdpi.css">
+</head>
+
+<body>
+
+<div class="sdpi-wrapper">
+    <div class="sdpi-item">
+        <label for="address" class="sdpi-item-label">YTMD Host</label>
+        <input
+                class="sdpi-item-value sdProperty"
+                id="address"
+                placeholder="e.g. 127.0.0.1 or Hostname"
+                required
+                autofocus
+                value="127.0.0.1"
+                onblur="setSettings()"
+        >
+    </div>
+    <div class="sdpi-item">
+        <label for="port" class="sdpi-item-label">YTMD Port</label>
+        <input
+                class="sdpi-item-value sdProperty"
+                id="port"
+                placeholder="e.g. 9863"
+                value="9863"
+                autofocus
+                onblur="setSettings()"
+                type="number"
+        >
+    </div>
+    <div class="sdpi-item">
+        <label for="token" class="sdpi-item-label">YTMD Token</label>
+        <input
+                class="sdpi-item-value sdProperty"
+                id="token"
+                placeholder=""
+                autofocus
+                onblur="setSettings()"
+        >
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/barraider/streamdeck-easypi@latest/src/sdtools.common.js"></script>
+</body>
+</html>

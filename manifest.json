@@ -1,0 +1,54 @@
+{
+  "Actions": [
+
+   {
+      "Icon": "images/youtube-with-circle",
+      "Name": "Encoder Control",
+      "States": [
+        {
+          "Image": "images/youtube-with-circle"
+        }
+      ],
+      "Controllers": [
+        "Encoder"
+      ],
+      "Encoder": {
+        "layout": "layout/customlayout.json",
+        "Icon": "images/youtube-with-circle",
+        "TriggerDescription": {
+          "Rotate": "Next/Previous Song",
+          "Push": "Pause/Resume Song",
+          "Touch": "Touch to Like",
+          "LongTouch": "Hold to Dislike"
+        }
+      },
+      "Tooltip": "Control YTMD with your StreamDeck Encoder",
+      "UUID": "com.ytmd.remote.encoder",
+      "PropertyInspectorPath": "setting.html"
+    }
+  ],
+  "SDKVersion": 2,
+  "Author": "Levin Ng",
+  "Category": "YTMD Encoder Remote",
+  "CategoryIcon": "images/youtube-with-circle",
+  "Icon": "images/youtube-with-circle",
+  "CodePath": "streamdeck-ytmd-remote",
+  "Description": "A Plugin to control YTMD from your StreamDeck Plus",
+  "Name": "YTMD Encoder Remote",
+  "URL": "https://github.com/levindecaro/streamdeck-ytmd",
+  "Version": "0.1",
+  "OS": [
+    {
+        "Platform": "mac",
+        "MinimumVersion" : "10.11"
+    },
+    {
+        "Platform": "windows",
+        "MinimumVersion" : "10"
+    }
+  ],
+  "Software":
+    {
+        "MinimumVersion" : "4.1"
+    }
+}

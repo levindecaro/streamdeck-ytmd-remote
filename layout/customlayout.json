@@ -1,0 +1,52 @@
+{
+    "id": "com.remote.ytmd.main",
+    "items": [
+        {
+          "key": "cover-icon",
+          "type": "pixmap",
+          "rect": [6, 15, 50, 50],
+          "enabled": true, 
+           "zOrder": 1
+          },
+        {
+            "key": "title",
+            "type": "text",
+            "font": { "size": 15, "weight": 600 },
+            "rect": [65, 15, 129, 15],
+            "alignment": "left",
+            "zOrder": 2
+          },
+        {
+          "key": "value",
+          "type": "text",
+          "rect": [65, 36, 129, 32],
+          "font": { "size": 18, "weight": 400 },
+          "alignment": "center",
+            "zOrder": 3
+           },
+        {
+          "key": "like-icon",
+          "type": "pixmap",
+          "rect": [6, 70, 24, 24],
+          "enabled": true, 
+           "zOrder": 4
+          },
+        {
+          "key": "play-icon",
+          "type": "pixmap",
+          "rect": [26, 67, 30, 30],
+          "enabled": true, 
+          "zOrder": 5
+          },
+        {
+          "key": "indicator",
+          "type": "bar",
+          "subtype": 4,
+          "rect": [60, 76, 140, 12],
+          "border_w": 0,
+          "value": 0, 
+            "zOrder": 6
+          }
+
+    ]
+}
