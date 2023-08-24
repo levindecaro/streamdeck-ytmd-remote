@@ -35,7 +35,7 @@
   "CodePath": "streamdeck-ytmd-remote",
   "Description": "A Plugin to control YTMD from your StreamDeck Plus",
   "Name": "YTMD Encoder Remote",
-  "URL": "https://github.com/levindecaro/streamdeck-ytmd",
+  "URL": "https://github.com/levindecaro/streamdeck-ytmd-remote",
   "Version": "1.0.0",
   "OS": [
     {
