@@ -28,8 +28,8 @@ This Stream Deck Plugin allows you to control the [YouTube Music Desktop App](ht
 |Play/Pause| - Press the knob |
 |Next Track| - Rotate Clockrise |
 |Previous Track| - Rotate Anti-Clockrise|
-|Like/Unlike Like| - Touch Screen Area Once|
-|Dislike/Undo Dislike| - Touch and Hold Screen Area|
+|Like/Unlike Track| - Touch Screen Area Once|
+|Dislike/Undo Dislike Track| - Touch and Hold Screen Area|
 |   |   |
 
 # Support / Feedback
