@@ -32,11 +32,12 @@
   "Category": "YTMD Encoder Remote",
   "CategoryIcon": "images/youtube-with-circle-category",
   "Icon": "images/youtube-with-circle-plugin",
-  "CodePath": "streamdeck-ytmd-remote",
+  "CodePathMac": "streamdeck-ytmd-remote",
+  "CodePathWin": "streamdeck-ytmd-remote.exe",
   "Description": "A Plugin to control YTMD from your StreamDeck Plus",
   "Name": "YTMD Encoder Remote",
   "URL": "https://github.com/levindecaro/streamdeck-ytmd-remote",
-  "Version": "1.0.0",
+  "Version": "1.0.1",
   "OS": [
     {
         "Platform": "mac",
