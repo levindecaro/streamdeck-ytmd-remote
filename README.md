@@ -19,6 +19,8 @@ This Stream Deck Plugin allows you to control the [YouTube Music Desktop App](ht
 5. In SteamDeck YTMD Encoder Remote Setting, click "Authorize", an Authoriztion windows wil Pop Up, click "Allow" to register YTMD Encoder Remote into companion server.
 6. Token will auto fill into the token input box.
 7. Click "Save"
+8. Restart StreamDesk(Sorry for now).
+
 
 
 ![Setting](images/setting.png)
