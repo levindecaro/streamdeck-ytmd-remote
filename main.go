@@ -4,21 +4,71 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"math"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/LiterMC/socket.io"
+	"github.com/LiterMC/socket.io/engine.io"
 	"github.com/levindecaro/streamdeck"
 )
 
+var isActivated bool
+
 var (
-	PauseInfoRetrival bool // Use to pause song retrieval between encoder action
-	StopInfoRetrival  bool // Use to exit song retrieval loop
+	LikeStatusInfo    int
+	coverImg          string
+	PreviousThumbnail string
 )
+
+type Payload struct {
+	Player Player `json:"player"`
+	Video  Video  `json:"video"`
+}
+
+type Player struct {
+	Queue         Queue   `json:"queue"`
+	VideoProgress float64 `json:"videoProgress"`
+	Volume        int     `json:"volume"`
+	TrackState    int     `json:"trackState"`
+}
+
+type PlayerState struct {
+	Player Player `json:"player"`
+}
+
+type Queue struct {
+	Items     []Item `json:"items"`
+	ItemIndex int    `json:"selectedItemIndex"`
+	Infinite  bool   `json:"isInfinite"`
+	AutoPlay  bool   `json:"autoplay"`
+}
+
+type Item struct {
+	Selected   bool        `json:"selected"`
+	Title      string      `json:"title"`
+	Author     string      `json:"author"`
+	Duration   string      `json:"duration"`
+	Thumbnails []Thumbnail `json:"thumbnails"`
+}
+
+type Thumbnail struct {
+	URL string `json:"url"`
+}
+
+type Video struct {
+	Title           string      `json:"title"`
+	Author          string      `json:"author"`
+	Album           string      `json:"album"`
+	DurationSeconds int         `json:"durationSeconds"`
+	Thumbnails      []Thumbnail `json:"thumbnails"`
+	LikeStatus      int         `json:"likeStatus"`
+}
 
 var (
 	ytmdHost  string
 	ytmdToken string
-	ytmdPort  string
 )
 
 type Settings struct {
@@ -70,7 +120,6 @@ func setup(client *streamdeck.Client) {
 
 		ytmdHost = s.Address + ":" + s.Port
 		ytmdToken = s.Token
-		StopInfoRetrival = false
 		client.LogMessage("YTMD Address: " + ytmdHost + ", YTMD Token: " + ytmdToken)
 
 		return nil
@@ -84,37 +133,30 @@ func setup(client *streamdeck.Client) {
 			return err
 		}
 
-		y, err := ytmdGetPlayer(ytmdHost)
-		if err != nil {
-			client.SetFeedback(ctx, ErrorPayload(), streamdeck.HardwareAndSoftware)
-		}
-
-		PauseInfoRetrival = true
-
 		showTitle := ""
 
 		if p.Hold {
 
-			if y.LikeStatus == "DISLIKE" {
+			if LikeStatusInfo == -1 {
 				showTitle = "Unset Dislike"
 			} else {
 				showTitle = "Dislike"
 			}
 
-			err := ytmdCmd(ytmdHost, ytmdToken, "track-thumbs-down")
+			err := ytmdCmd(ytmdHost, ytmdToken, "toggleDisLike")
 			if err != nil {
 				client.LogMessage(err.Error())
 			}
 
 		} else {
 
-			if y.LikeStatus == "LIKE" {
+			if LikeStatusInfo == 1 {
 				showTitle = "Unset Like"
 			} else {
 				showTitle = "Like"
 			}
 
-			err := ytmdCmd(ytmdHost, ytmdToken, "track-thumbs-up")
+			err := ytmdCmd(ytmdHost, ytmdToken, "toggleLike")
 			if err != nil {
 				client.LogMessage(err.Error())
 			}
@@ -132,20 +174,11 @@ func setup(client *streamdeck.Client) {
 			return err
 		}
 
-		y, err := ytmdGetPlayer(ytmdHost)
-		if err != nil {
-			return err
-		}
-
 		SetFeedbackPayload := map[string]interface{}{
 			"play-icon": "images/controller-paus",
 		}
 
-		if y.IsPaused {
-			ytmdCmd(ytmdHost, ytmdToken, "track-play")
-		} else {
-			ytmdCmd(ytmdHost, ytmdToken, "track-pause")
-		}
+		ytmdCmd(ytmdHost, ytmdToken, "playPause")
 
 		return client.SetFeedback(ctx, SetFeedbackPayload, streamdeck.HardwareAndSoftware)
 
@@ -171,11 +204,10 @@ func setup(client *streamdeck.Client) {
 
 		showImg := ""
 		showValue := ""
-		PauseInfoRetrival = true
 		if p.Ticks > 0 { // Rotated CW
-			err := ytmdCmd(ytmdHost, ytmdToken, "track-next")
+			err := ytmdCmd(ytmdHost, ytmdToken, "next")
 			if err != nil {
-				client.SetFeedback(ctx, ErrorPayload(), streamdeck.HardwareAndSoftware)
+				client.SetFeedback(ctx, DefaultPayload(), streamdeck.HardwareAndSoftware)
 				client.LogMessage(err.Error())
 			}
 
@@ -183,9 +215,9 @@ func setup(client *streamdeck.Client) {
 			showValue = "Next Track"
 
 		} else { // Rotated CCW
-			err := ytmdCmd(ytmdHost, ytmdToken, "track-previous")
+			err := ytmdCmd(ytmdHost, ytmdToken, "previous")
 			if err != nil {
-				client.SetFeedback(ctx, ErrorPayload(), streamdeck.HardwareAndSoftware)
+				client.SetFeedback(ctx, DefaultPayload(), streamdeck.HardwareAndSoftware)
 				client.LogMessage(err.Error())
 			}
 			showImg = "images/controller-jump-to-start"
@@ -208,7 +240,6 @@ func setup(client *streamdeck.Client) {
 	})
 
 	action.RegisterHandler(streamdeck.WillDisappear, func(ctx context.Context, client *streamdeck.Client, event streamdeck.Event) error {
-		StopInfoRetrival = true
 		return nil
 	})
 
@@ -230,51 +261,130 @@ func setup(client *streamdeck.Client) {
 			return err
 		}
 
-		client.LogMessage("YTMD Remote Started")
+		client.LogMessage("YTMD Remote Start")
 
 		ytmdHost = s.Address + ":" + s.Port
 		ytmdToken = s.Token
 
-		ticker := time.NewTicker((1000 * time.Millisecond))
-		stop := make(chan bool)
+		opts := engine.Options{
+			Secure: false,
+			Host:   "ws://" + ytmdHost,
+			Path:   "/socket.io/",
+		}
 
-		var PreviousSong string
+		messageChan := make(chan []byte, 1)
 
-		StopInfoRetrival = false
+		engio, err := engine.NewSocket(opts)
+		if err != nil {
+			client.LogMessage("Failed to create a new socket: " + err.Error())
+		}
 
-		go func() {
-			for {
+		if !isActivated {
+			isActivated = true
+
+			engio.OnMessage(func(s *engine.Socket, data []byte) {
 				select {
-				case <-stop:
-					return
-				case <-ticker.C:
-
-					recall := map[string]any{
-						"PreviousSong": PreviousSong, // Pass Previous Song Name to RetrieveSongInfo, skip cover image download if unchanged.
-					}
-					if !PauseInfoRetrival { // Skip calling RetrieveSongInfo if pause flag set
-
-						SetFeedbackPayload, err := RetrieveSongInfo(recall)
-						if err != nil {
-
-							client.SetFeedback(ctx, SetFeedbackPayload, streamdeck.HardwareAndSoftware)
-							client.LogMessage(err.Error())
-							time.Sleep(3 * time.Second) // Delay retry
-							break
-						}
-						PreviousSong = SetFeedbackPayload["value"].(string) // Store Previous Song Name
-
-						client.SetFeedback(ctx, SetFeedbackPayload, streamdeck.HardwareAndSoftware)
-					}
-					PauseInfoRetrival = false // reset for next iterration
-
+				case messageChan <- data:
+				default:
+					<-messageChan
+					messageChan <- data
 				}
-
-				if StopInfoRetrival { // Exit the loop when plugin unload
-					stop <- true
+			})
+			ticker := time.NewTicker(1000 * time.Millisecond)
+			go func() {
+				for range ticker.C {
+					select {
+					case data := <-messageChan:
+						messageProcesser(data, ctx, client, event)
+					default:
+						// No message to process
+					}
 				}
+			}()
+			err = engio.Dial(context.Background())
+			if err != nil {
+				client.LogMessage("Failed to connect to the server: " + err.Error())
 			}
-		}()
-		return (client.SetFeedbackTitle(ctx, "YTMD Remote", streamdeck.HardwareAndSoftware))
+
+			sio := socket.NewSocket(engio, socket.WithAuthToken(ytmdToken))
+
+			for {
+				client.LogMessage("trying to connect")
+				if sio.Status() == 0 {
+					sio.Connect("/api/v1/realtime")
+					break
+				} else if sio.Status() == 1 {
+					sio.Emit("state-update")
+					break
+				}
+				time.Sleep(time.Second)
+			}
+		}
+		return (client.SetFeedback(ctx, DefaultPayload(), streamdeck.HardwareAndSoftware))
 	})
+
+}
+
+func messageProcesser(data []byte, ctx context.Context, client *streamdeck.Client, event streamdeck.Event) {
+
+	t := string(data)
+	startIdx := strings.Index(t, `{`)
+	endIdx := strings.LastIndex(t, `}`)
+	jsonData := t[startIdx : endIdx+1]
+
+	var result map[string]interface{}
+	err := json.Unmarshal([]byte(jsonData), &result)
+	if err != nil {
+		client.LogMessage("Error unmarshaling JSON: " + err.Error())
+	}
+	if _, ok := result["sid"]; ok {
+		return
+
+	}
+	var message Payload
+	if err := json.Unmarshal([]byte(jsonData), &message); err != nil {
+		client.LogMessage("Error parsing JSON: " + err.Error())
+		return
+	}
+	floatSecond := float64(message.Video.DurationSeconds)
+	progressInt := int(math.Round(message.Player.VideoProgress / floatSecond * 100))
+	songIndex := message.Player.Queue.ItemIndex
+	indicator := map[string]interface{}{
+		"value":   progressInt,
+		"enabled": true,
+	}
+
+	likeImg := "images/heart-outlined"
+	LikeStatusInfo = message.Video.LikeStatus
+	if LikeStatusInfo == 2 {
+		likeImg = "images/thumbs-heart"
+	}
+	if LikeStatusInfo == 0 {
+		likeImg = "images/thumbs-down"
+	}
+
+	playImg := "images/controller-stop"
+	if message.Player.TrackState == 1 {
+		playImg = "images/controller-play"
+	}
+	currentThumbnail := message.Video.Thumbnails[0].URL
+	if PreviousThumbnail != currentThumbnail {
+		coverImgBase64, err := getImageAsBase64(currentThumbnail)
+		coverImg = "data:image/png;base64," + coverImgBase64
+		if err != nil {
+			client.LogMessage("Failed to download thumbnail from " + currentThumbnail + "Error: " + err.Error())
+		}
+	}
+
+	SetFeedbackPayload := map[string]interface{}{
+		"title":      message.Player.Queue.Items[songIndex].Author,
+		"value":      message.Player.Queue.Items[songIndex].Title,
+		"indicator":  indicator,
+		"cover-icon": coverImg,
+		"like-icon":  likeImg,
+		"play-icon":  playImg,
+	}
+	// client.LogMessage(message.Player.Queue.Items[songIndex].Title)
+	client.SetFeedback(ctx, SetFeedbackPayload, streamdeck.HardwareAndSoftware)
+	PreviousThumbnail = currentThumbnail
 }
