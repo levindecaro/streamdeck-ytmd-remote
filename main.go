@@ -301,21 +301,35 @@ func setup(client *streamdeck.Client) {
 					}
 				}
 			}()
-			err = engio.Dial(context.Background())
-			if err != nil {
-				client.LogMessage("Failed to connect to the server: " + err.Error())
+			for {
+				err = engio.Dial(context.Background())
+				if err != nil {
+					client.LogMessage("Failed to connect to the server: " + err.Error())
+				} else {
+					break
+				}
+				time.Sleep(time.Second)
 			}
-
 			sio := socket.NewSocket(engio, socket.WithAuthToken(ytmdToken))
 
 			for {
-				client.LogMessage("trying to connect")
 				if sio.Status() == 0 {
-					sio.Connect("/api/v1/realtime")
-					break
+					err := sio.Connect("/api/v1/realtime")
+					if err != nil {
+						client.LogMessage(err.Error())
+					} else {
+						break
+					}
 				} else if sio.Status() == 1 {
+					client.LogMessage("is connected")
+
 					sio.Emit("state-update")
-					break
+					if err != nil {
+						client.LogMessage(err.Error())
+					} else {
+						break
+					}
+
 				}
 				time.Sleep(time.Second)
 			}
