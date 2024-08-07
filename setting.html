@@ -6,7 +6,7 @@
           content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover">
     <meta name=apple-mobile-web-app-capable content=yes>
     <meta name=apple-mobile-web-app-status-bar-style content=black>
-    <title>ytmd-remote</title>
+    <title>ytmd-encoder-remote</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/barraider/streamdeck-easypi@latest/src/sdpi.css">
 
 </head>
@@ -80,8 +80,8 @@
 <script>
     document.getElementById('authcoderequest').addEventListener('click', function() {
         const data = {
-            "appId": "ytmd-remote",
-            "appName": "YTMD Remote",
+            "appId": "ytmd-encoder-remote",
+            "appName": "YTMD Encoder Remote",
             "appVersion": "2.0.0"
         };
 
@@ -103,7 +103,7 @@
         })
         .then(challengeResponseData => {
             const tokenRequestData = {
-                "appId": "ytmd-remote",
+                "appId": "ytmd-encoder-remote",
                 "code": challengeResponseData.code
             };
 
