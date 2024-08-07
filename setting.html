@@ -6,13 +6,15 @@
           content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover">
     <meta name=apple-mobile-web-app-capable content=yes>
     <meta name=apple-mobile-web-app-status-bar-style content=black>
-    <title>streamdeck-yeelight</title>
+    <title>ytmd-remote</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/barraider/streamdeck-easypi@latest/src/sdpi.css">
+
 </head>
 
 <body>
 
 <div class="sdpi-wrapper">
+
     <div class="sdpi-item">
         <label for="address" class="sdpi-item-label">YTMD Host</label>
         <input
@@ -22,6 +24,7 @@
                 required
                 autofocus
                 value="127.0.0.1"
+                readonly="true"
                 onblur="setSettings()"
         >
     </div>
@@ -33,22 +36,102 @@
                 placeholder="e.g. 9863"
                 value="9863"
                 autofocus
+                readonly="true"
                 onblur="setSettings()"
                 type="number"
         >
     </div>
+
     <div class="sdpi-item">
-        <label for="token" class="sdpi-item-label">YTMD Token</label>
+
+        <label for="token" class="sdpi-item-label">Token</label>
         <input
                 class="sdpi-item-value sdProperty"
                 id="token"
                 placeholder=""
                 autofocus
-                onblur="setSettings()"
         >
+    </div>
+    <div class="sdpi-item">
+        <label for="laststatus" class="sdpi-item-label">Last Status</label>
+        <input
+                class="sdpi-item-value sdProperty"
+                id="laststatus"
+                placeholder=""
+                readonly="true"
+        >
+    </div>
+    <div class="sdpi-item">
+        <button
+                class="sdpi-item-value"
+                id="authcoderequest"
+        >Authorize</button>
+    </div>
+    <div class="sdpi-item">
+        <button
+                class="sdpi-item-value"
+                id="save"
+                onclick="setSettings()"
+        >Save</button>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/gh/barraider/streamdeck-easypi@latest/src/sdtools.common.js"></script>
+<script>
+    document.getElementById('authcoderequest').addEventListener('click', function() {
+        const data = {
+            "appId": "ytmd-remote",
+            "appName": "YTMD Remote",
+            "appVersion": "2.0.0"
+        };
+
+        fetch('http://localhost:9863/api/v1/auth/requestcode', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                document.getElementById('laststatus').value = 'Network response was not ok ' + response.statusText;
+
+                throw new Error('Network response was not ok ' + response.statusText);
+
+            }
+            return response.json();
+        })
+        .then(challengeResponseData => {
+            const tokenRequestData = {
+                "appId": "ytmd-remote",
+                "code": challengeResponseData.code
+            };
+
+            return fetch('http://localhost:9863/api/v1/auth/request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(tokenRequestData)
+            });
+        })
+        .then(response => {
+            if (!response.ok) {
+                document.getElementById('laststatus').value = 'Network response was not ok ' + response.statusText;
+
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(tokenResponseData => {
+            document.getElementById('laststatus').value = 'Success!';
+
+            document.getElementById('token').value = tokenResponseData.token;
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+</script>
 </body>
 </html>
